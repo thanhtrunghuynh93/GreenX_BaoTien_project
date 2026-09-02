@@ -1,0 +1,132 @@
+%% Green-X — Science of the Total Environment manuscript (Elsevier elsarticle).
+%% STOTEN conventions: author-year (Harvard) citations, double-spaced
+%% line-numbered review layout, abstract <= 300 words, 5 highlights (<= 85
+%% chars each), <= 6 keywords, graphical abstract at submission.
+%% Build: latexmk -pdf main.tex
+%% Sections live in contents/0N_*.tex; figures come from ../../Model/paper_figures/.
+\documentclass[review,12pt,authoryear]{elsarticle}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{lineno}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{figures/}}
+\linenumbers
+
+\journal{Science of the Total Environment}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Interpolation versus generalization in machine learning prediction
+of micropollutant adsorption on layered double hydroxides}
+
+%% Authors intentionally left for the user to fill in.
+\author[inst1]{[AUTHORS TO BE ADDED]}
+\affiliation[inst1]{organization={[AFFILIATION]}, country={[COUNTRY]}}
+
+\begin{abstract}
+%% One paragraph, 300--340 words, quantified. All values trace to
+%% Model/paper_figures/*.csv and Model/interp_row_42/ (see CLAIMS.md).
+Micropollutants such as pharmaceuticals, pesticides, and personal-care
+products are detected in water bodies worldwide, and layered double
+hydroxides (LDHs) are widely studied as tunable adsorbents for their
+removal.
+Machine learning (ML) models trained on literature-compiled datasets
+increasingly report near-perfect prediction of adsorption performance, yet
+the evaluation protocols behind these reports rarely account for the
+structure of the underlying data, in which many experimental records
+originate from few source studies. We compiled 1,342 adsorption experiments
+for LDH--micropollutant systems from 59 published studies and evaluated
+seven regression models (linear regression, $k$-nearest neighbors, neural
+network, Cubist, random forest, XGBoost, and histogram gradient boosting)
+under a leakage-aware protocol that separates two questions: interpolation
+within studied systems and generalization to unseen studies. With
+duplicate records removed and all preprocessing fitted on training folds
+only, the best model predicted removal ratio (RR\%) for studied systems at
+new operating conditions with $R^2$ of 0.87 and RMSE of 10 percentage
+points. Under leave-one-study-out evaluation, however, the median
+per-study error rose to 14--16 percentage points, two to three times the
+interpolation error, and only 20 of the 59 studies were predicted with
+accuracy resembling the interpolation regime, showing that random-split
+protocols overstate the screening ability of literature-trained models by
+a wide margin; the models still reduce the error of descriptor-free
+baselines by roughly 40 percent, so some signal does transfer. Split-conformal prediction intervals certified the
+interpolation task (93\% empirical coverage at a 90\% nominal level, with
+$\pm$19-point intervals), but for unseen studies the intervals had to
+widen to $\pm$68 points to maintain coverage, and a common
+distance-to-training applicability score carried no information about
+realized error in either task. Chemistry-informed features, including
+the electrostatic driving force pH$-$pH$_{\mathrm{pzc}}$, changed the
+errors little yet yielded feature attributions consistent with
+electrostatic and hydrophobic adsorption mechanisms. The results
+delimit what literature-trained adsorption models can currently support
+in practice: condition optimization for studied systems, but not yet the
+screening of new adsorbent--pollutant combinations.
+\end{abstract}
+
+%%\begin{graphicalabstract}
+%%\includegraphics{grabs}  % placeholder -- to be produced at submission
+%%\end{graphicalabstract}
+
+\begin{highlights}
+\item 1,342 LDH adsorption records from 59 studies evaluated leakage-aware
+\item Random splits overstate ML skill: $R^2$ 0.85 within studies, near zero across
+\item Leave-one-study-out audit quantifies transfer for every source study
+\item Conformal intervals certify interpolation; new-study intervals widen 3--4$\times$
+\item pH$-$pH$_{\mathrm{pzc}}$ feature links model behavior to electrostatics
+\end{highlights}
+
+\begin{keyword}
+layered double hydroxide \sep micropollutant \sep adsorption \sep machine
+learning \sep data leakage \sep uncertainty quantification
+\end{keyword}
+
+\end{frontmatter}
+
+\section*{Nomenclature}
+\begin{tabular}{@{}ll@{}}
+LDH & layered double hydroxide \\
+RR\% & removal ratio (percent) \\
+$C_i$ & initial concentration (mg/L) \\
+AD & adsorbent dose (g/L) \\
+pH$_{\mathrm{pzc}}$ & pH at the point of zero charge \\
+BET & Brunauer--Emmett--Teller surface area (m$^2$/g) \\
+PV & pore volume (cm$^3$/g) \\
+APD & average pore diameter (nm) \\
+$d_{003}$ & basal interlayer spacing (nm) \\
+log $K_{\mathrm{ow}}$ & octanol--water partition coefficient \\
+ML & machine learning \\
+LR, KNN, ANN & linear regression, $k$-nearest neighbors, neural network \\
+RF, XGB, HistGB & random forest, XGBoost, histogram gradient boosting \\
+LOSO & leave-one-study-out \\
+(T1), (T2) & interpolation task, cross-study generalization task \\
+MAE, RMSE & mean absolute error, root mean square error \\
+SHAP & Shapley additive explanations \\
+CV & cross-validation \\
+\end{tabular}
+
+\input{contents/01_introduction}
+\input{contents/02_methods}
+\input{contents/03_results_discussion}
+\input{contents/04_conclusions}
+
+\section*{CRediT authorship contribution statement}
+[TO BE COMPLETED BY THE AUTHORS.]
+
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests
+or personal relationships that could have appeared to influence the work
+reported in this paper.
+
+\section*{Data availability}
+The curated dataset, the full modeling pipeline
+(\texttt{ldh\_pipeline.py}), and the notebooks reproducing every table and
+figure are available at [REPOSITORY URL TO BE ADDED].
+
+\bibliographystyle{elsarticle-harv}
+\bibliography{main}
+
+\end{document}

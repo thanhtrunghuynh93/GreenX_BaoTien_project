@@ -1,0 +1,26 @@
+\section{Conclusions}
+\label{sec:conclusions}
+
+We evaluated seven machine learning models for micropollutant adsorption
+on layered double hydroxides under a leakage-aware protocol that
+separates within-system interpolation from cross-study generalization,
+using 1,342 experiments compiled from 59 studies. The models predict
+removal ratio for studied systems at new operating conditions with test
+$R^2$ of $0.85 \pm 0.03$ and RMSE near 11 percentage points across 20
+repeated splits, but the same models show near-zero per-study skill when
+entire studies are held out, and a leave-one-study-out audit locates the
+failure in a wide per-study error distribution rather than a uniform
+degradation. Against descriptor-free baselines the picture is more
+nuanced: the models reduce the naive cross-study error by roughly 40
+percent, so they do carry transferable signal, yet not enough to certify
+predictions for an unmeasured system. Split-conformal
+intervals certify interpolation predictions at $\pm$19 percentage points,
+whereas for unseen studies neither conformal calibration nor a
+distance-based applicability score yields informative guarantees.
+Chemistry-informed features such as pH$-$pH$_{\mathrm{pzc}}$ leave the
+accuracy essentially unchanged but anchor the learned behavior in
+electrostatic and hydrophobic mechanisms. In
+future work, we plan to extend the compilation with interlayer-anion and
+morphology descriptors, model study-level effects explicitly, and test
+few-shot calibration so that a small number of measurements of a new
+system can recover the accuracy currently reserved for studied ones.

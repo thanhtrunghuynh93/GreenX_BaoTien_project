@@ -1,0 +1,142 @@
+%% Supplementary Information — build: latexmk -pdf supplementary.tex
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{figures/}}
+
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thesection}{Text S\arabic{section}}
+
+\title{Supplementary Information\\
+Interpolation versus generalization in machine learning prediction of
+micropollutant adsorption on layered double hydroxides}
+\author{[AUTHORS]}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Data cleaning rules}
+All rules are implemented in \texttt{ldh\_pipeline.load\_data} and applied
+identically in every notebook. (1) Column names are stripped of
+surrounding whitespace. (2) Categorical labels are normalized by
+lowercasing, collapsing internal whitespace and hyphen spacing, and
+stripping trailing punctuation, after which known synonyms are merged
+(e.g., \emph{co-precipitation or aging}, \emph{co- precipitation}
+$\rightarrow$ \emph{Co-precipitation}; \emph{reconstruction or memory
+effect} $\rightarrow$ \emph{Reconstruction}). (3) The removal ratio is
+converted to percent units by a range-aware rule: if the column maximum
+is $\le 1.5$ the values are multiplied by 100; an assertion then checks
+that all values lie in $[0, 100]$, which makes the conversion idempotent
+under re-execution. (4) Records identical in every descriptor are
+reduced to their first occurrence (83 records removed). (5) Missing
+numeric values are imputed inside each model pipeline by a five-neighbor
+KNN imputer computed in z-score space and mapped back to physical units;
+columns with no observed value in a training fold fall back to the fold
+mean. The source-study identifier is retained for grouping only and
+never enters the feature matrix.
+
+\section{Hyperparameter search spaces and selected values}
+
+Tree-ensemble hyperparameters were selected by Optuna (TPE sampler, 30
+trials, seeded) on cross-validation folds of the training data of the
+reference split; grid searches used the same folds. Selected values are
+read directly from the saved model pipelines
+(\texttt{Model/interp\_row\_42/saved\_models.joblib}).
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameter search spaces and selected values}
+\begin{tabular}{lll}
+\toprule
+Model & Search space & Selected \\
+\midrule
+HistGB & max\_iter 100--600; lr $10^{-4}$--1 (log); depth 3--15; leaf 3--9 &
+  max\_iter 484; lr 0.089; depth 14; leaf 8 \\
+XGBoost & n\_estimators 100--600; lr $10^{-4}$--1 (log); depth 3--15;
+  child weight 3--9 & 495 trees; lr 0.114; depth 13; child weight 7 \\
+RF & n\_estimators 100--600; depth 3--15; leaf 3--9 &
+  347 trees; depth 13; leaf 3 \\
+Cubist & committees 1--9; neighbors none, 1--8 & committees 9; neighbors 1 \\
+KNN & $k$ 1--9 & $k = 1$ \\
+ANN & fixed: 1 hidden layer, 32 ReLU units, Adam, 2000 iterations & --- \\
+LR & no hyperparameters & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-model results under both tasks}
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-study-out per-study MAE distribution (RR\%),
+59 studies, fixed hyperparameters}
+\begin{tabular}{lccc}
+\toprule
+Model & Median & Q25 & Q75 \\
+\midrule
+Cubist & 14.1 & 4.7 & 22.2 \\
+KNN    & 16.0 & 6.5 & 30.3 \\
+HistGB & 16.4 & 4.7 & 25.8 \\
+RF     & 16.8 & 6.1 & 25.9 \\
+ANN    & 18.1 & 11.5 & 38.6 \\
+XGB    & 18.3 & 3.8 & 25.4 \\
+LR     & 28.4 & 18.4 & 34.8 \\
+\midrule
+Global-mean baseline & 24.2 & -- & -- \\
+Per-pollutant-mean baseline & 25.1 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Wall-clock training and prediction time on the reference split
+(seconds; single measurement, indicative only)}
+\begin{tabular}{lcc}
+\toprule
+Model & Fit & Predict \\
+\midrule
+KNN & 0.05 & 0.04 \\
+LR & 0.14 & 0.05 \\
+Cubist & 0.22 & 0.04 \\
+RF & 0.37 & 0.09 \\
+ANN & 0.67 & 0.01 \\
+HistGB & 0.86 & 0.08 \\
+XGBoost & 10.1 & 0.03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Additional figures}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.85\linewidth]{fig_corr_heatmap}
+\caption{Spearman correlation of the numeric descriptors}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.95\linewidth]{fig_pdp}
+\caption{Partial dependence of the three highest-ranked features (HistGB)}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.7\linewidth]{fig_shap_interaction}
+\caption{SHAP dependence of pH$-$pH$_{\mathrm{pzc}}$ colored by log
+$K_{\mathrm{ow}}$ (HistGB with engineered features, hold-out test set)}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.8\linewidth]{fig_shap_bar_eng}
+\caption{Global SHAP importance, HistGB with engineered features}
+\end{figure}
+
+\end{document}

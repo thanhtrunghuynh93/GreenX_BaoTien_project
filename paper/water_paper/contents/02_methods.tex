@@ -1,0 +1,246 @@
+\section{Materials and methods}
+\label{sec:methods}
+
+Figure~\ref{fig:workflow} summarizes the workflow: compilation and
+cleaning of the literature data, the two-task evaluation protocol,
+leakage-controlled model pipelines, and the uncertainty and
+interpretation layers.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_workflow}
+\caption{Evaluation workflow}
+\label{fig:workflow}
+\end{figure}
+
+\subsection{Data curation}
+\label{sec:data}
+
+We compiled 1,342 batch-adsorption experiments for LDH--micropollutant
+systems from 59 peer-reviewed studies. Each record holds 30 descriptors in
+four groups: micropollutant properties (compound identity, log
+$K_{\mathrm{ow}}$, molecular weight, the Abraham solvation parameters
+$E$, $S$, $A$, $B$, $V$, and topological polar surface area), LDH
+composition and synthesis (divalent and trivalent metal, molar ratio,
+synthesis route, hydrothermal temperature and time, calcination
+conditions, and composition-averaged elemental descriptors), material
+texture (interlayer spacing $d_{003}$, BET surface area, pore volume,
+average pore diameter, and point of zero charge pH$_{\mathrm{pzc}}$), and
+operating conditions (pH, temperature, contact time, adsorbent dose, and
+initial concentration). Table~\ref{tab:stats} summarizes the numeric
+descriptors; the prediction target is the removal ratio (RR\%).
+
+\textbf{Cleaning.} Values stored as fractions were converted to percent by
+a range-aware rule that leaves already-percent data untouched, and
+category labels were normalized (e.g., merging spelling variants of
+\emph{co-precipitation}). Records identical in every descriptor were
+reduced to a single occurrence, since duplicates spanning a train--test
+boundary would let the test be answered by lookup; deduplication removed
+83 records. Missing texture values were imputed by a
+$k$-nearest-neighbor imputer computed in standardized space and mapped
+back to physical units; the imputer, like every fitted transform in this
+work, was trained on training folds only. The source study of each
+record is retained as a grouping key and is never used as a model input.
+Details of the cleaning rules are in Text~S1.
+
+\begin{table}[t]
+\centering
+\caption{Summary statistics of the numeric descriptors}
+\label{tab:stats}
+\begin{tabular}{lccc}
+\toprule
+Descriptor & Median & Range & Missing (\%) \\
+\midrule
+\multicolumn{4}{l}{\emph{Micropollutant}} \\
+log $K_{\mathrm{ow}}$ & $-0.02$ & $-2.67$--$4.51$ & 0 \\
+MW (g/mol) & 331 & 152--734 & 0 \\
+$E$ / $S$ / $A$ / $B$ / $V$ & 1.81 / 2.10 / 0.70 / 1.70 / 2.30 & -- & 0 \\
+TPSA (\AA$^2$) & 76.2 & 37.3--194.0 & 0 \\
+\midrule
+\multicolumn{4}{l}{\emph{Composition and synthesis}} \\
+M(II)/M(III) ratio & 3.0 & 0.5--8.0 & 0 \\
+Avg.\ atomic weight (g/mol) & 48.1 & 24.8--73.7 & 0 \\
+Avg.\ d-electrons & 4.25 & 0--8.89 & 0 \\
+Avg.\ Pauling electronegativity & 1.59 & 1.30--1.89 & 0 \\
+Hydrothermal temp.\ (\textcelsius) & 70 & 25--160 & 13.3 \\
+Hydrothermal time (h) & 24 & 12--40 & 13.3 \\
+Calcination temp.\ (\textcelsius) & 400 & 200--550 & 65.9 \\
+Calcination time (h) & 4 & 1--12 & 65.9 \\
+\midrule
+\multicolumn{4}{l}{\emph{Material texture}} \\
+$d_{003}$ (nm) & 0.77 & 0.25--1.13 & 2.5 \\
+BET (m$^2$/g) & 82.0 & 0.4--225.7 & 7.9 \\
+PV (cm$^3$/g) & 0.10 & 0--1.46 & 25.3 \\
+APD (nm) & 8.4 & 0.2--64.2 & 13.9 \\
+pH$_{\mathrm{pzc}}$ & 7.5 & 5.5--11.6 & 24.6 \\
+\midrule
+\multicolumn{4}{l}{\emph{Operating conditions}} \\
+pH & 6.7 & 2.0--12.0 & 0 \\
+Temperature (\textcelsius) & 25 & 10--55 & 0 \\
+Contact time (h) & 1.5 & 0.02--192 & 0 \\
+Dose (g/L) & 0.9 & 0.01--50 & 0 \\
+$C_i$ (mg/L) & 40 & 1--1688 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation protocol}
+\label{sec:protocol}
+
+\textbf{Two prediction tasks.} We evaluate every model under two
+protocols that correspond to the two services expected from
+literature-trained models. Task (T1), \emph{within-system interpolation},
+asks how well a model predicts RR\% for a studied
+adsorbent--pollutant system at new operating conditions. Task (T2),
+\emph{cross-study generalization}, asks how well the model predicts
+systems it has never seen. Intuitively, (T1) allows the model to have
+seen the material and the pollutant at other conditions, while (T2) does
+not.
+
+\textbf{Repeated splits for (T1).} A single random split can be lucky or
+unlucky, so (T1) is measured over 20 seeded 80/20 record-level splits of
+the duplicate-free data, and scores are reported as mean $\pm$ standard
+deviation across repeats. Hyperparameters are tuned once (Section
+\ref{sec:models}) and held fixed across repeats, so the spread reflects
+sampling variability rather than tuning noise.
+
+\textbf{Leave-one-study-out audit for (T2).} Each of the 59 studies $s$
+is held out once; the model $f_{-s}$ is refit on the remaining 58
+studies with fixed hyperparameters and scored on the held-out records:
+\begin{equation}
+\mathrm{MAE}_s \;=\; \frac{1}{n_s}\sum_{i \in s}
+\bigl|\, y_i - f_{-s}(\mathbf{x}_i) \,\bigr| .
+\label{eq:loso}
+\end{equation}
+Reporting the distribution of $\mathrm{MAE}_s$ across studies, rather
+than one pooled score, exposes which systems transfer and which do not.
+A learning curve over the number of training studies tests whether
+cross-study error is limited by data volume or by data diversity.
+
+\textbf{Naive baselines.} To make the error magnitudes interpretable, we
+score three predictors that use no descriptors: the global training-mean;
+the per-pollutant mean (the average RR\% of the same compound in the
+training data, falling back to the global mean for unseen compounds); and,
+for (T1) only, the per-study mean. A model is useful for screening only
+if it beats these lookups on unseen studies.
+
+\textbf{Leakage control.} Imputation, scaling, and categorical encoding
+are embedded in each model pipeline and fitted on training folds only.
+Hyperparameter tuning uses cross-validation folds that differ from the
+folds used for reporting, and grouped tasks use group-aware folds
+throughout. These controls address the leakage mechanisms documented for
+applied ML \citep{kapoor2023leakage}, which we found to inflate reported
+skill substantially when absent (Section~\ref{sec:rq2}).
+
+\subsection{Regression models}
+\label{sec:models}
+
+We compare seven regressors spanning the model families used in the
+adsorption-ML literature, chosen so that their inductive biases differ.
+
+\textbf{Linear regression (LR)} fits one additive coefficient per
+descriptor. It serves as the interpretable floor: any nonlinearity or
+interaction in the adsorption response appears as a gap between LR and
+the flexible models.
+
+\textbf{$k$-nearest neighbors (KNN)} predicts the average RR\% of the $k$
+most similar training records in standardized feature space
+\citep{cover1967knn}, with $k$ grid-searched between 1 and 9. KNN has no
+functional form at all; its performance measures how far pure similarity
+lookup carries prediction, which makes it a diagnostic for
+near-duplicate structure in the data.
+
+\textbf{Artificial neural network (ANN)} is a single-hidden-layer
+perceptron with 32 rectified linear units trained by Adam
+\citep{rumelhart1986backprop}, matching the compact architectures used in
+prior adsorption studies. Larger architectures were not explored because
+the dataset holds fewer than $10^3$ effective degrees of freedom per
+feature.
+
+\textbf{Cubist} builds a rule set whose leaves hold linear models and
+smooths predictions with training-instance neighbors
+\citep{quinlan1992m5}; committees and neighbors are grid-searched.
+Unlike constant-leaf trees, its leaf-linear structure can extrapolate
+moderately beyond the training range of a rule, a property that becomes
+relevant under (T2).
+
+\textbf{Random forest (RF)} averages deep decorrelated trees grown on
+bootstrap samples \citep{breiman2001rf}, providing a variance-reduced
+piecewise-constant baseline among the ensembles.
+
+\textbf{XGBoost} fits gradient-boosted trees with second-order updates
+and regularized leaf weights \citep{chen2016xgboost}.
+\textbf{Histogram gradient boosting (HistGB)} is the scikit-learn
+implementation of the same family with histogram-binned split finding
+\citep{ke2017lightgbm, pedregosa2011sklearn}; both are the strongest
+current defaults for tabular data.
+
+Tree-ensemble hyperparameters were tuned with the TPE sampler of Optuna
+over 30 trials \citep{akiba2019optuna} on cross-validation folds of the
+training data. Scale-sensitive models (LR, KNN, ANN, Cubist) receive a
+standardizer inside their pipeline; tree ensembles operate on raw feature
+scales. Search spaces and selected values are in Table~S1; all splits,
+folds, and samplers are seeded for reproducibility.
+
+\subsection{Uncertainty and applicability domain}
+\label{sec:uq}
+
+\textbf{Split-conformal intervals.} We wrap the best model in
+split-conformal prediction \citep{vovk2005conformal, lei2018conformal}.
+A calibration subset of $n$ records is withheld from training, absolute
+residuals $r_i = |y_i - \hat{y}_i|$ are computed on it, and the interval
+half-width is their conformal quantile
+\begin{equation}
+q \;=\; \mathrm{Quantile}\!\left(\{r_i\}_{i=1}^{n};\;
+\frac{\lceil (n+1)(1-\alpha) \rceil}{n}\right),
+\label{eq:conformal}
+\end{equation}
+so that each test prediction is reported as $[\hat{y}-q,\ \hat{y}+q]$
+with nominal coverage $1-\alpha = 0.9$. For task (T2) the calibration
+subset is drawn as whole studies, so the calibration residuals reflect
+the new-study setting. Conformal validity assumes exchangeability
+between calibration and test units, which grouped data satisfy only
+approximately; we therefore report empirical coverage for both tasks
+rather than assuming it.
+
+\textbf{Applicability domain.} As a candidate trust flag we compute, for
+each test record, the mean standardized distance to its five nearest
+training records in the preprocessed feature space. Records far from the
+training distribution should receive predictions with caution; we
+validate the flag by correlating it with realized absolute error rather
+than assuming it works.
+
+\subsection{Feature engineering and attribution}
+\label{sec:features}
+
+Beyond the raw descriptors, we construct three features with mechanistic
+meaning: the electrostatic driving force pH$-$pH$_{\mathrm{pzc}}$, whose
+sign determines whether the LDH surface is positively or negatively
+charged relative to the solution; the initial loading ratio $C_i$/dose;
+and the interaction log $K_{\mathrm{ow}} \times$
+(pH$-$pH$_{\mathrm{pzc}}$) coupling hydrophobicity with surface charge.
+Both tasks are re-evaluated with and without these features. Feature
+attributions are computed with SHAP \citep{lundberg2017shap} on the
+held-out test set using the fitted models, complemented by permutation
+importance ranks across all seven models and one-dimensional partial
+dependence profiles, and the resulting patterns are read against the
+expected electrostatic and hydrophobic mechanisms.
+
+\subsection{Performance metrics}
+\label{sec:metrics}
+
+Model skill is reported as the coefficient of determination,
+\begin{equation}
+R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2},
+\label{eq:r2}
+\end{equation}
+the root mean square error,
+$\mathrm{RMSE} = \smash{\sqrt{\tfrac{1}{n}\sum_i (y_i - \hat{y}_i)^2}}$,
+and the mean absolute error,
+$\mathrm{MAE} = \tfrac{1}{n}\sum_i |y_i - \hat{y}_i|$,
+each computed on three bases with distinct meanings: the training
+records (in-sample fit), cross-validation folds of the training set
+(validation), and the held-out test records of the task at hand. All
+three are reported to keep the in-sample ceiling and the generalization
+estimate visibly separate. Wall-clock training and prediction times are
+reported in Section~\ref{sec:timing}.

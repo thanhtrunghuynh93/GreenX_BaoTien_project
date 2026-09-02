@@ -1,0 +1,78 @@
+\section{Introduction}
+\label{sec:intro}
+
+Micropollutants, including pharmaceuticals, pesticides, endocrine
+disruptors, and personal-care products, are detected at ng/L to \textmu g/L
+levels in surface water, groundwater, and treated effluent worldwide
+\citep{TODO-micropollutant-occurrence}. Conventional treatment trains
+remove many of these compounds only partially, and their chronic ecological
+and human-health effects have placed micropollutant control on regulatory
+agendas in the European Union, the United States, and Asia
+\citep{TODO-regulation}. Adsorption is among the most widely deployed
+polishing steps because it requires no reagent input, produces no
+transformation by-products, and operates across wide concentration ranges
+\citep{TODO-adsorption-review}.
+
+Layered double hydroxides (LDHs) are a class of anionic clays with the
+general formula
+$[\mathrm{M}^{2+}_{1-x}\mathrm{M}^{3+}_{x}(\mathrm{OH})_2]^{x+}
+[\mathrm{A}^{n-}]_{x/n}\cdot m\mathrm{H_2O}$, whose metal composition,
+interlayer anion, and calcination state can be tuned to target specific
+pollutants \citep{TODO-ldh-review}. Hundreds of LDH variants have been
+synthesized and tested against individual micropollutants, and each such
+study reports removal under its own grid of pH, temperature, contact time,
+adsorbent dose, and initial concentration. The resulting literature is
+large but fragmented: no single laboratory can cover the combinatorial
+space of metal pairs, synthesis routes, and pollutants experimentally.
+
+Isotherm and kinetic models describe each of these systems in isolation
+and offer no mechanism for pooling evidence across studies. Machine
+learning (ML) offers a natural response to this fragmentation.
+By compiling published experiments into a single dataset, ML models have
+been trained to predict adsorption capacity or removal ratio from
+material, pollutant, and operating descriptors, with reported test
+$R^2$ values frequently above 0.9
+\citep{TODO-ml-adsorption-1, TODO-ml-adsorption-2, TODO-biochar-cubist}.
+Such models promise two distinct services: interpolating the behavior of
+an already-studied adsorbent--pollutant system at untested conditions, and
+screening new systems before synthesis. The second service is the one
+most frequently invoked to motivate these studies.
+
+However, we argue that the evaluation protocols behind these reports do
+not support the screening claim. Firstly, literature-compiled datasets
+are strongly clustered: in our compilation, 1,342 experimental records
+originate from only 59 source studies, and within one study the material
+and pollutant descriptors are constant while only operating conditions
+vary. A random record-level train--test split therefore places
+near-duplicate records on both sides, and the test score measures
+within-study interpolation while being reported as generalization.
+Secondly, preprocessing steps such as imputation, scaling, and feature
+selection are commonly fitted on the full dataset before splitting, which
+leaks test-set information into training \citep{kapoor2023leakage}.
+Thirdly, point predictions are reported without uncertainty estimates or
+applicability bounds, leaving practitioners no way to know when a
+prediction should be trusted.
+
+To address the above challenges, we evaluate ML models for micropollutant
+adsorption on LDHs under a protocol that closes each of these leakage
+pathways. In essence, our idea is
+to treat the source study as the unit of generalization: we evaluate every
+model twice, once under a duplicate-free record-level split that answers
+the interpolation question, and once under grouped, leave-one-study-out
+protocols that answer the screening question, with all preprocessing
+confined to training folds in both cases. We complement point predictions
+with split-conformal intervals and a distance-based applicability-domain
+score, and we examine whether chemistry-informed features improve
+cross-study transfer.
+
+More specifically, this study aims to (1) quantify the gap between
+interpolation and cross-study generalization for seven regression models
+on 1,342 LDH--micropollutant records from 59 studies; (2) equip the
+predictions with distribution-free uncertainty intervals and an
+applicability-domain flag, and test their reliability under both tasks;
+and (3) evaluate chemistry-informed features, including the electrostatic
+driving force pH$-$pH$_{\mathrm{pzc}}$, and read the resulting feature
+attributions against known adsorption mechanisms. To the best of our
+knowledge, this is the first study of LDH adsorption modeling that
+separates these two prediction tasks explicitly and reports what
+literature-trained models can, and cannot yet, deliver for practice.
