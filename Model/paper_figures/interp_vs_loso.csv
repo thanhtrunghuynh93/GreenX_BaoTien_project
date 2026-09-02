@@ -1,0 +1,8 @@
+,interpolation MAE (hold-out),unseen-study MAE (LOSO median)
+XGB,5.46,18.33
+HistGB,5.62,16.4
+KNN,7.73,16.0
+Cubist,8.1,14.11
+RF,8.35,16.81
+ANN,14.11,18.13
+LR,17.22,28.4

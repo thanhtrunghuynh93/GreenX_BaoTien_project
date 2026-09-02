@@ -1,0 +1,20 @@
+{
+  "name": "generalization_group_42",
+  "data_file": "20260804_Data_Adsorption.xlsx",
+  "target": "RR %",
+  "drop_features": [],
+  "split_mode": "group",
+  "dedup_features": true,
+  "test_size": 0.2,
+  "seed": 42,
+  "n_trials": 30,
+  "models": [
+    "LR",
+    "KNN",
+    "ANN",
+    "Cubist",
+    "RF",
+    "XGB",
+    "HistGB"
+  ]
+}

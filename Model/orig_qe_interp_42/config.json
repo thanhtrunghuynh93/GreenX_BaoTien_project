@@ -1,0 +1,20 @@
+{
+  "name": "orig_qe_interp_42",
+  "data_file": "Data_Adsorption.xlsx",
+  "target": "Qe mg/g",
+  "drop_features": [],
+  "split_mode": "row",
+  "dedup_features": true,
+  "test_size": 0.2,
+  "seed": 42,
+  "n_trials": 30,
+  "models": [
+    "LR",
+    "KNN",
+    "ANN",
+    "Cubist",
+    "RF",
+    "XGB",
+    "HistGB"
+  ]
+}
