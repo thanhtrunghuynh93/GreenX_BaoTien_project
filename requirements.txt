@@ -1,0 +1,16 @@
+pandas
+numpy
+scipy
+scikit-learn
+xgboost
+lightgbm
+cubist
+optuna
+shap
+statsmodels
+openpyxl
+matplotlib
+seaborn
+jupyter
+nbformat
+nbclient
