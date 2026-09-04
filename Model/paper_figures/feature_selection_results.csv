@@ -1,0 +1,10 @@
+feature_set,model,n_features,interp_r2_mean,interp_r2_std,interp_mae_mean,interp_mae_std,loso_mae_median
+full (30),Cubist,30,0.793,0.032,8.041,0.566,
+full (30),HistGB,30,0.85,0.028,6.344,0.53,16.4
+full (30),XGB,30,0.842,0.029,6.277,0.558,
+correlation-screened (21),Cubist,21,0.786,0.036,8.172,0.603,
+correlation-screened (21),HistGB,21,0.849,0.027,6.425,0.469,16.238
+correlation-screened (21),XGB,21,0.839,0.031,6.372,0.552,
+top-10 permutation,Cubist,10,0.789,0.033,8.139,0.512,
+top-10 permutation,HistGB,10,0.847,0.026,6.415,0.515,16.185
+top-10 permutation,XGB,10,0.838,0.029,6.37,0.567,

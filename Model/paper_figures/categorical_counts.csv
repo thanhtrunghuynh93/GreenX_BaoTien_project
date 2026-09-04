@@ -1,0 +1,32 @@
+level,records,studies,variable
+Amoxicillin,94,3,TP
+Ciprofloxacin,181,32,TP
+Delafloxacin,23,1,TP
+Diclofenac,304,3,TP
+Doxycycline,106,3,TP
+Erythromycin,22,1,TP
+Ibuprofen,39,1,TP
+Levofloxacin,102,3,TP
+Methylparaben,56,1,TP
+Metronidazole,81,1,TP
+Moxifloxacin,25,1,TP
+Norfloxacin,90,1,TP
+Oxytetracycline,11,1,TP
+Tetracycline,208,8,TP
+Ca,34,1,Metal(II)
+Cozn,23,1,Metal(II)
+Cu,92,3,Metal(II)
+Mg,633,15,Metal(II)
+Ni,162,7,Metal(II)
+Nial,28,1,Metal(II)
+Zn,312,31,Metal(II)
+Znco,58,2,Metal(II)
+Al,819,47,Metal(III)
+Ce,31,1,Metal(III)
+Fe,311,12,Metal(III)
+Ti,28,1,Metal(III)
+TiAl,153,1,Metal(III)
+Co-Precipitation,1171,54,Method
+Hydrothermal Method,28,1,Method
+Reconstruction,11,1,Method
+Urea Hydrolysis,132,3,Method
