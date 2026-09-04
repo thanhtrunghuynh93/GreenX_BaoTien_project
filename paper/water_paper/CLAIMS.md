@@ -28,6 +28,15 @@
 | Hyperparameters (Tab. S1) | HistGB 484/0.089/14/8; XGB 495/0.114/13/7; RF 347/13/3; Cubist 9/1; KNN k=1 | `Model/interp_row_42/saved_models.joblib` | VERIFIED |
 | Missingness: calcination 65.9%, pHpzc 24.6%, PV 25.3% (§3.1) | see CSV | `descriptor_stats.csv` | VERIFIED |
 
+| Spearman vs RR% (Tab. 2): max |ρ|=0.43 (PV), dose 0.33, E −0.30, pH 0.27 | see CSV | `spearman_vs_target.csv` | VERIFIED |
+| Target stats: mean 45.5, median 43.7, SD 28.0, skew 0.11 (§3.1) | computed | `paper_depth_analysis.ipynb` A9 output | VERIFIED |
+| Composition: 14 pollutants, 13 metal pairs, 4 routes; diclofenac 304 rec/3 studies; cipro 181/32 (§3.1, Tab. S5) | see CSV | `categorical_counts.csv` | VERIFIED |
+| VIF: median ≈7×10⁴, max 2.5×10⁶, 22/26 > 10 (§3.1, Tab. S6) | see CSV | `vif_table.csv` | VERIFIED |
+| Feature selection (Tab. 4): R² 0.85±0.03 all three sets; LOSO 16.4→16.2 | see CSV | `feature_selection_results.csv` | VERIFIED |
+| Top-10 set = 5 conditions + 4 texture + Log Kow (§fs) | ranks | `perm_ranks_all_models.csv` (median rank) | VERIFIED |
+| SHAP group shares: conditions 54.2 / texture 17.8 / comp-synth 14.4 / pollutant 13.5 % (§3.5, Tab. S7) | see CSV | `shap_group_share.csv` | VERIFIED |
+| Skewness: dose 6.0, Ci 5.0, time 4.9 (§3.1, Tab. S4) | see CSV | `descriptor_stats_extended.csv` | VERIFIED |
+
 Open items before submission:
 - Replace 8 remaining `TODO-*` bib keys with verified references; human-verify the 7 assistant-added standard references in `main.bib`.
 - Mechanism paragraphs in §3.5 flagged for the authors' domain review.

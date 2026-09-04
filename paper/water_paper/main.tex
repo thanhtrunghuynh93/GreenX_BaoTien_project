@@ -9,6 +9,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{lineno}
 \usepackage[hidelinks]{hyperref}
 \graphicspath{{figures/}}
@@ -45,9 +46,9 @@ network, Cubist, random forest, XGBoost, and histogram gradient boosting)
 under a leakage-aware protocol that separates two questions: interpolation
 within studied systems and generalization to unseen studies. With
 duplicate records removed and all preprocessing fitted on training folds
-only, the best model predicted removal ratio (RR\%) for studied systems at
-new operating conditions with $R^2$ of 0.87 and RMSE of 10 percentage
-points. Under leave-one-study-out evaluation, however, the median
+only, the best models predicted removal ratio (RR\%) for studied systems
+at new operating conditions with $R^2$ of $0.85 \pm 0.03$ and RMSE near
+11 percentage points across 20 repeated splits. Under leave-one-study-out evaluation, however, the median
 per-study error rose to 14--16 percentage points, two to three times the
 interpolation error, and only 20 of the 59 studies were predicted with
 accuracy resembling the interpolation regime, showing that random-split

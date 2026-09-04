@@ -12,23 +12,62 @@ predictions, and are they chemically plausible?
 \subsection{Dataset characteristics}
 \label{sec:eda}
 
-Figure~\ref{fig:eda} summarizes the compiled data. Removal ratios span
-the full 0--100\% range with a median above 50\%, but the distribution
-differs strongly between pollutants and between LDH metal pairs
-(Fig.~\ref{fig:eda}a,b), reflecting both genuine chemistry and the
-uneven attention different systems have received in the literature. The
-study-size distribution is heavily skewed: the largest single study
-contributes 220 of the 1,342 records, the median study only 17, and a
-random record-level sample is therefore dominated by a handful of
-intensively measured systems. Spearman correlations among the numeric
+Figure~\ref{fig:eda} summarizes the compiled data. The target is broad
+and near-symmetric (RR\% mean 45.5, median 43.7, SD 28.0, skewness 0.11)
+and spans the full 0--100\% range, but its distribution differs strongly
+between pollutants and between LDH metal pairs (Fig.~\ref{fig:eda}a,b),
+reflecting both genuine chemistry and the uneven attention different
+systems have received in the literature. The compilation covers 14
+micropollutants, 13 metal pairs, and 4 synthesis routes, with record and
+study counts diverging sharply: diclofenac contributes 304 records from
+only 3 studies, while ciprofloxacin contributes 181 records spread over
+32 studies. The study-size distribution is likewise skewed: the largest
+single study contributes 220 of the 1,342 records, the median study only
+17, and a random record-level sample is therefore dominated by a handful
+of intensively measured systems. Several operating variables have heavy
+right tails (skewness 5--6 for dose, initial concentration, and contact
+time; Table~S4), which the rank-based correlation analysis below
+accommodates.
+
+\textbf{Univariate association with the target.} Table~\ref{tab:spearman}
+lists the Spearman correlation of each numeric descriptor with RR\%. No
+descriptor exceeds $|\rho| = 0.43$ (pore volume), and the leading
+operating variables reach only 0.27--0.33, so no single factor controls
+removal monotonically. This is because the response is governed by
+interactions — the same pH raises removal for one pollutant--material
+pair and lowers it for another — which is what motivates flexible
+learners over univariate screening in the first place, and it cautions
+against reading the univariate signs mechanistically.
+
+\begin{table}[t]
+\centering
+\caption{Spearman rank correlation of numeric descriptors with RR\%
+(twelve largest by magnitude)}
+\label{tab:spearman}
+\begin{tabular}{lc@{\qquad}lc}
+\toprule
+Descriptor & $\rho$ & Descriptor & $\rho$ \\
+\midrule
+PV (cm$^3$/g) & 0.43 & TPSA & $-0.19$ \\
+Dose (g/L) & 0.33 & $S$ & $-0.19$ \\
+$E$ & $-0.30$ & $C_i$ (mg/L) & 0.18 \\
+APD (nm) & 0.28 & $d_{003}$ (nm) & 0.17 \\
+pH & 0.27 & $B$ & $-0.16$ \\
+Hydrothermal time (h) & 0.23 & Calcination time (h) & 0.16 \\
+\bottomrule
+\end{tabular}
+\end{table} Spearman correlations among the numeric
 descriptors (Fig.~S1) show the expected blocks: the Abraham solvation
 parameters correlate strongly with molecular weight and with each other,
 and the composition-averaged elemental descriptors correlate with the
-metal identities they are derived from. This redundancy motivates the
-correlated-descriptor experiment in Section~S3 and, more fundamentally,
-explains why record-level splits leak: within one study, most descriptor
-columns are constant, so any two records of the same study are
-near-duplicates in feature space. Missingness is confined to the
+metal identities they are derived from. Variance inflation factors make
+the redundancy explicit — 22 of 26 numeric descriptors exceed the usual
+threshold of 10, with a median VIF near $7 \times 10^{4}$ (Table~S6) —
+because descriptors are constant within a study, so the study-cluster
+structure induces near-perfect collinearity. This redundancy motivates
+the feature-selection experiment of Section~\ref{sec:fs} and, more
+fundamentally, explains why record-level splits leak: any two records of
+the same study are near-duplicates in feature space. Missingness is confined to the
 synthesis and texture blocks (Table~\ref{tab:stats}): calcination
 conditions are unreported for two thirds of the records, and
 pH$_{\mathrm{pzc}}$ and pore volume for roughly a quarter, which is why
@@ -171,6 +210,43 @@ when the test set contains genuinely new systems.
 \label{fig:transfer}
 \end{figure}
 
+\subsection{Feature selection under both tasks}
+\label{sec:fs}
+
+Table~\ref{tab:fs} evaluates the three nested descriptor sets of
+Section~\ref{sec:screening} under both tasks with fixed
+hyperparameters. Selection is close to neutral in both directions.
+Interpolation accuracy is indistinguishable across the sets ($R^2$ of
+$0.85 \pm 0.03$ for HistGB in all three; XGBoost and Cubist behave the
+same, Table~S8), so ten well-chosen descriptors carry essentially all
+the within-system signal of the full thirty. This is because the
+removable descriptors are redundant with the retained ones — the
+collinear Abraham and composition-averaged block flagged by the VIF
+analysis — rather than independently informative. In the other
+direction, no reduction rescues cross-study transfer: the LOSO median
+moves only from 16.4 to 16.2 points, consistent with the flat learning
+curve — the transfer bottleneck is study diversity, not dimensionality.
+The practical reading favors parsimony: the top-10 set consists of the
+five operating conditions, four texture properties, and log
+$K_{\mathrm{ow}}$, all routinely reported quantities, so a deployable
+model does not require the full descriptor battery.
+
+\begin{table}[t]
+\centering
+\caption{Feature-set comparison under both tasks (HistGB; interpolation
+mean $\pm$ SD over 20 splits, LOSO median over 59 studies)}
+\label{tab:fs}
+\begin{tabular}{lcccc}
+\toprule
+Feature set & $p$ & Interp.\ $R^2$ & Interp.\ MAE & LOSO median MAE \\
+\midrule
+Full & 30 & $0.85 \pm 0.03$ & $6.3 \pm 0.5$ & 16.4 \\
+Correlation-screened & 21 & $0.85 \pm 0.03$ & $6.4 \pm 0.5$ & 16.2 \\
+Top-10 permutation & 10 & $0.85 \pm 0.03$ & $6.4 \pm 0.5$ & 16.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Uncertainty and applicability domain (RQ3)}
 \label{sec:rq3}
 
@@ -217,16 +293,22 @@ models on the leading factors: adsorbent dose ranks first, followed by
 contact time, initial concentration, and pH, with the first material
 property (BET) at median rank six and the first pollutant descriptor
 (log $K_{\mathrm{ow}}$) at rank nine; only the additive LR deviates.
-The partial-dependence profiles of the three leading features (Fig.~S2)
-show textbook adsorption behavior: removal rises steeply with dose up to
-roughly 2--5 g/L and then saturates, rises within the first hours of
-contact and plateaus at equilibrium, and declines with initial
-concentration beyond roughly 200 mg/L as fixed capacity is exhausted.
-Within known systems, the models therefore learn genuine
-condition--response physics. The same ranking, however, explains the
-transfer failure of Section~\ref{sec:rq2} from a second direction:
-material and pollutant descriptors, the only information available about
-an unseen system, contribute comparatively little to the fitted models.
+The SHAP summary (Fig.~\ref{fig:shap}, top) shows the same hierarchy
+from a second attribution method, and aggregating mean $|$SHAP$|$ by
+descriptor group makes it quantitative: operating conditions account
+for 54\% of the total attribution mass, material texture for 18\%,
+composition and synthesis for 14\%, and pollutant descriptors for 14\%
+(Table~S7). The partial-dependence profiles of
+the three leading features (Fig.~S2) show textbook adsorption behavior:
+removal rises steeply with dose up to roughly 2--5 g/L and then
+saturates, rises within the first hours of contact and plateaus at
+equilibrium, and declines with initial concentration beyond roughly 200
+mg/L as fixed capacity is exhausted. Within known systems, the models
+therefore learn genuine condition--response physics. The same ranking,
+however, explains the transfer failure of Section~\ref{sec:rq2} from a
+second direction: material and pollutant descriptors, the only
+information available about an unseen system, contribute comparatively
+little to the fitted models.
 
 \textbf{Mechanistic reading.} The SHAP dependence of
 pH$-$pH$_{\mathrm{pzc}}$ (Fig.~\ref{fig:shap}a) is not smoothly
@@ -276,8 +358,10 @@ Avg.\ electronegativity & 15 & 13 & 7 & 15 & 9 & 9 & 8 \\
 
 \begin{figure}[t]
 \centering
+\includegraphics[width=.78\linewidth]{fig_shap_beeswarm}\\[4pt]
 \includegraphics[width=\linewidth]{fig_shap_mechanism}
-\caption{SHAP dependence of mechanism-linked features}
+\caption{SHAP summary (top) and dependence of mechanism-linked features
+(bottom)}
 \label{fig:shap}
 \end{figure}
 

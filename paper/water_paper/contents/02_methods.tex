@@ -137,42 +137,77 @@ skill substantially when absent (Section~\ref{sec:rq2}).
 
 We compare seven regressors spanning the model families used in the
 adsorption-ML literature, chosen so that their inductive biases differ.
+Throughout, $\mathbf{x}_i \in \mathbb{R}^{p}$ denotes the preprocessed
+descriptor vector of record $i$ and $\hat{y}_i$ its predicted RR\%.
 
 \textbf{Linear regression (LR)} fits one additive coefficient per
-descriptor. It serves as the interpretable floor: any nonlinearity or
-interaction in the adsorption response appears as a gap between LR and
-the flexible models.
+descriptor,
+\begin{equation}
+\hat{y} = \beta_0 + \sum_{j=1}^{p} \beta_j x_j ,
+\label{eq:lr}
+\end{equation}
+with $\boldsymbol{\beta}$ estimated by least squares. It serves as the
+interpretable floor: any nonlinearity or interaction in the adsorption
+response appears as a gap between LR and the flexible models.
 
-\textbf{$k$-nearest neighbors (KNN)} predicts the average RR\% of the $k$
-most similar training records in standardized feature space
-\citep{cover1967knn}, with $k$ grid-searched between 1 and 9. KNN has no
+\textbf{$k$-nearest neighbors (KNN)} predicts the average target of the
+$k$ closest training records in standardized feature space
+\citep{cover1967knn},
+\begin{equation}
+\hat{y}(\mathbf{x}) = \frac{1}{k}\sum_{i \in \mathcal{N}_k(\mathbf{x})} y_i ,
+\label{eq:knn}
+\end{equation}
+where $\mathcal{N}_k(\mathbf{x})$ holds the $k$ nearest neighbors under
+Euclidean distance and $k$ is grid-searched between 1 and 9. KNN has no
 functional form at all; its performance measures how far pure similarity
 lookup carries prediction, which makes it a diagnostic for
 near-duplicate structure in the data.
 
 \textbf{Artificial neural network (ANN)} is a single-hidden-layer
-perceptron with 32 rectified linear units trained by Adam
-\citep{rumelhart1986backprop}, matching the compact architectures used in
+perceptron trained by Adam \citep{rumelhart1986backprop},
+\begin{equation}
+\hat{y} = \mathbf{w}^{\top} \sigma\!\left(W\mathbf{x} + \mathbf{b}\right) + b_0 ,
+\label{eq:ann}
+\end{equation}
+with 32 hidden units and rectified-linear activation
+$\sigma(z) = \max(0, z)$, matching the compact architectures used in
 prior adsorption studies. Larger architectures were not explored because
 the dataset holds fewer than $10^3$ effective degrees of freedom per
 feature.
 
-\textbf{Cubist} builds a rule set whose leaves hold linear models and
-smooths predictions with training-instance neighbors
-\citep{quinlan1992m5}; committees and neighbors are grid-searched.
-Unlike constant-leaf trees, its leaf-linear structure can extrapolate
-moderately beyond the training range of a rule, a property that becomes
-relevant under (T2).
+\textbf{Cubist} builds a set of rules $R_m$ whose leaves hold linear
+models \citep{quinlan1992m5},
+\begin{equation}
+\hat{y}(\mathbf{x}) = \operatorname*{avg}_{m:\,\mathbf{x} \in R_m}
+\Bigl( \beta_{0}^{(m)} + \textstyle\sum_j \beta_{j}^{(m)} x_j \Bigr),
+\label{eq:cubist}
+\end{equation}
+optionally smoothed toward the targets of nearby training instances;
+committees and neighbors are grid-searched. Unlike constant-leaf trees,
+its leaf-linear structure can extrapolate moderately beyond the training
+range of a rule, a property that becomes relevant under (T2).
 
-\textbf{Random forest (RF)} averages deep decorrelated trees grown on
-bootstrap samples \citep{breiman2001rf}, providing a variance-reduced
-piecewise-constant baseline among the ensembles.
+\textbf{Random forest (RF)} averages $B$ decorrelated trees grown on
+bootstrap samples \citep{breiman2001rf},
+\begin{equation}
+\hat{y}(\mathbf{x}) = \frac{1}{B}\sum_{b=1}^{B} T_b(\mathbf{x}),
+\label{eq:rf}
+\end{equation}
+providing a variance-reduced piecewise-constant baseline among the
+ensembles.
 
-\textbf{XGBoost} fits gradient-boosted trees with second-order updates
-and regularized leaf weights \citep{chen2016xgboost}.
-\textbf{Histogram gradient boosting (HistGB)} is the scikit-learn
-implementation of the same family with histogram-binned split finding
-\citep{ke2017lightgbm, pedregosa2011sklearn}; both are the strongest
+\textbf{Gradient-boosted trees} build the prediction stagewise, each new
+tree fitting the residual structure left by its predecessors,
+\begin{equation}
+F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \nu\, h_m(\mathbf{x}),
+\label{eq:gb}
+\end{equation}
+with learning rate $\nu$ and base trees $h_m$. \textbf{XGBoost}
+implements Eq.~(\ref{eq:gb}) with second-order updates and a regularized
+objective that penalizes the number of leaves and their weights
+\citep{chen2016xgboost}; \textbf{histogram gradient boosting (HistGB)}
+is the scikit-learn implementation with histogram-binned split finding
+\citep{ke2017lightgbm, pedregosa2011sklearn}. Both are the strongest
 current defaults for tabular data.
 
 Tree-ensemble hyperparameters were tuned with the TPE sampler of Optuna
@@ -181,6 +216,29 @@ training data. Scale-sensitive models (LR, KNN, ANN, Cubist) receive a
 standardizer inside their pipeline; tree ensembles operate on raw feature
 scales. Search spaces and selected values are in Table~S1; all splits,
 folds, and samplers are seeded for reproducibility.
+
+\subsection{Feature screening and selection}
+\label{sec:screening}
+
+Multicollinearity is diagnosed with the variance inflation factor,
+\begin{equation}
+\mathrm{VIF}_j = \frac{1}{1 - R_j^{2}},
+\label{eq:vif}
+\end{equation}
+where $R_j^{2}$ is the coefficient of determination of descriptor $j$
+regressed on all other descriptors (targets excluded). Because
+descriptors are constant within a study, the study-cluster structure
+drives VIF values orders of magnitude beyond the usual threshold of 10
+(Section~\ref{sec:eda}), so VIF is used here as a redundancy diagnostic
+rather than an automatic elimination rule.
+
+Feature selection is then evaluated the same way as the models
+themselves: three nested descriptor sets — the full set of 30, a
+correlation-screened set of 21 that drops the collinear Abraham and
+composition-averaged block, and the 10 descriptors with the best median
+permutation-importance rank — are compared under both tasks with fixed
+hyperparameters. Judging a feature set only under (T1) would inherit
+the same optimism as judging a model there, so both tasks are reported.
 
 \subsection{Uncertainty and applicability domain}
 \label{sec:uq}
