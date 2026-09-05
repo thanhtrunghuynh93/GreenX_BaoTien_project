@@ -132,6 +132,19 @@ throughout. These controls address the leakage mechanisms documented for
 applied ML \citep{kapoor2023leakage}, which we found to inflate reported
 skill substantially when absent (Section~\ref{sec:rq2}).
 
+\textbf{Deployment workflow.} The protocol doubles as a reusable recipe
+for future compilations (Fig.~\ref{fig:workflow}). Step~1: curate and
+normalize the literature records, retaining the source-study identifier.
+Step~2: remove exact duplicates and declare the prediction task:
+interpolation within studied systems or screening of new ones.
+Step~3: split accordingly (record-level for the former, study-grouped
+for the latter) and fit pipelines whose preprocessing sees training
+folds only. Step~4: wrap the chosen model in split-conformal
+calibration matched to the declared task and report coverage
+empirically. Every step is implemented in the released pipeline
+(\texttt{ldh\_pipeline.py}), so re-running the audit on an extended
+compilation requires only the new spreadsheet.
+
 \subsection{Regression models}
 \label{sec:models}
 
@@ -233,10 +246,10 @@ drives VIF values orders of magnitude beyond the usual threshold of 10
 rather than an automatic elimination rule.
 
 Feature selection is then evaluated the same way as the models
-themselves: three nested descriptor sets — the full set of 30, a
+themselves: three nested descriptor sets (the full set of 30, a
 correlation-screened set of 21 that drops the collinear Abraham and
 composition-averaged block, and the 10 descriptors with the best median
-permutation-importance rank — are compared under both tasks with fixed
+permutation-importance rank) are compared under both tasks with fixed
 hyperparameters. Judging a feature set only under (T1) would inherit
 the same optimism as judging a model there, so both tasks are reported.
 

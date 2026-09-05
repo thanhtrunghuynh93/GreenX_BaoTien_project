@@ -236,6 +236,54 @@ Top-10 permutation & Cubist & $0.79 \pm 0.03$ & $8.1 \pm 0.5$ \\
 \end{tabular}
 \end{table}
 
+\begin{table}[h]
+\centering
+\caption{Bootstrap 95\% confidence intervals for subgroup median RR\%
+differences (5,000 resamples)}
+\begin{tabular}{lcccc}
+\toprule
+Contrast & Median diff.\ & 95\% CI & Significant & $n_a$ / $n_b$ \\
+\midrule
+Zn--Al vs Mg--Al & 8.7 & [$-0.7$, 17.2] & no & 128 / 561 \\
+Calcined vs uncalcined & 10.1 & [1.7, 17.9] & yes & 457 / 885 \\
+Diclofenac vs tetracycline & 15.5 & [8.3, 27.3] & yes & 304 / 208 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Screening-threshold classification (RR\% $\ge$ 80) from the
+regression predictions}
+\begin{tabular}{lcccc}
+\toprule
+Task (model) & Precision & Recall & F1 & True positives / $n$ \\
+\midrule
+Interpolation (HistGB) & 0.92 & 0.58 & 0.71 & 38 / 252 \\
+LOSO (Cubist) & 0.32 & 0.06 & 0.10 & 203 / 1342 \\
+LOSO (HistGB) & 0.17 & 0.01 & 0.02 & 203 / 1342 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-study-out median MAE (RR\%) by dominant pollutant
+($\ge$3 studies) and model}
+\begin{tabular}{lccccccc}
+\toprule
+Pollutant & ANN & Cubist & HistGB & KNN & LR & RF & XGB \\
+\midrule
+Ciprofloxacin & 13.4 & 5.4 & 5.0 & 7.0 & 28.4 & 6.4 & 4.2 \\
+Doxycycline & 56.0 & 15.2 & 16.4 & 42.4 & 31.7 & 26.4 & 25.5 \\
+Amoxicillin & 13.2 & 17.2 & 28.2 & 11.9 & 14.7 & 29.4 & 28.4 \\
+Tetracycline & 43.6 & 20.7 & 23.9 & 24.4 & 22.3 & 26.3 & 23.7 \\
+Diclofenac & 59.1 & 21.8 & 18.3 & 38.3 & 71.1 & 20.0 & 18.3 \\
+Levofloxacin & 33.7 & 22.2 & 24.0 & 31.8 & 30.5 & 20.8 & 25.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Additional figures}
 
 \begin{figure}[h]

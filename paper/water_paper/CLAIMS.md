@@ -37,6 +37,17 @@
 | SHAP group shares: conditions 54.2 / texture 17.8 / comp-synth 14.4 / pollutant 13.5 % (§3.5, Tab. S7) | see CSV | `shap_group_share.csv` | VERIFIED |
 | Skewness: dose 6.0, Ci 5.0, time 4.9 (§3.1, Tab. S4) | see CSV | `descriptor_stats_extended.csv` | VERIFIED |
 
+| Spearman bootstrap CIs, all 12 exclude zero (Tab. 2) | see CSV | `bootstrap_spearman_ci.csv` (2,000 resamples) | VERIFIED |
+| Subgroup contrasts: calcined +10.1 [1.7,17.9] sig; diclofenac−tetracycline +15.5 [8.3,27.3] sig; Zn–Al−Mg–Al +8.7 [−0.7,17.2] NOT sig (§3.1, Tab. S9) | see CSV | `subgroup_median_ci.csv` (5,000 resamples) | VERIFIED |
+| Wilcoxon HistGB vs XGB p=0.23 (§3.2) | see CSV | `wilcoxon_models.csv` | VERIFIED |
+| Adjusted R² HistGB 0.83±0.03 (§3.2) | see CSV | `adjusted_r2.csv` | VERIFIED |
+| Parity slopes: test 0.87x+5.6, train 0.98 (§3.2, Fig. parity) | recomputed | `fig_parity_diag.png` panel titles | VERIFIED |
+| Error bands: interp 84% within 10 pts, 95% within 20; LOSO ~24% within 10, >52% beyond 20 (§errorbands) | see CSV | `error_bands.csv` | VERIFIED |
+| Screening @RR≥80: interp P=0.92/R=0.58/F1=0.71; LOSO Cubist P=0.32/R=0.06 (12 of 203 retrieved) (§errorbands, Tab. S10) | see CSV | `screening_classification.csv` | VERIFIED |
+| Stratified LOSO matrix; no uniform winner (§3.3, Tab. S11) | see CSV | `stratified_performance.csv` | VERIFIED |
+| Qe gap: Cubist interp R² 0.98 vs LOSO median MAE 42 mg/g, 3/32 positive R² (§implications) | see CSV | `qe_gap.csv` | VERIFIED |
+| Prior-studies table (Tab. prior) | placeholders | ALL rows `[TODO-verify]` — user must fill from verified literature | UNVERIFIED BY DESIGN |
+
 Open items before submission:
 - Replace 8 remaining `TODO-*` bib keys with verified references; human-verify the 7 assistant-added standard references in `main.bib`.
 - Mechanism paragraphs in §3.5 flagged for the authors' domain review.

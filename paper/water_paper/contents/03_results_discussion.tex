@@ -34,35 +34,54 @@ lists the Spearman correlation of each numeric descriptor with RR\%. No
 descriptor exceeds $|\rho| = 0.43$ (pore volume), and the leading
 operating variables reach only 0.27--0.33, so no single factor controls
 removal monotonically. This is because the response is governed by
-interactions — the same pH raises removal for one pollutant--material
-pair and lowers it for another — which is what motivates flexible
+interactions (the same pH raises removal for one pollutant--material
+pair and lowers it for another), which is what motivates flexible
 learners over univariate screening in the first place, and it cautions
 against reading the univariate signs mechanistically.
+
+\textbf{Subgroup contrasts.} Bootstrap confidence intervals on median
+RR\% differences (5,000 resamples; Table~S9) separate real subgroup
+effects from compilation artifacts. Calcined materials remove a median
+10.1 points more than uncalcined ones (95\% CI [1.7, 17.9]), and
+diclofenac records exceed tetracycline records by 15.5 points
+(CI [8.3, 27.3]); both intervals exclude zero. The apparent Zn--Al
+advantage over Mg--Al (8.7 points), by contrast, is not significant
+(CI [$-0.7$, 17.2]), so metal-pair claims from this compilation would
+be premature.
 
 \begin{table}[t]
 \centering
 \caption{Spearman rank correlation of numeric descriptors with RR\%
-(twelve largest by magnitude)}
+(twelve largest by magnitude), with bootstrap 95\% confidence intervals
+(2,000 resamples); every interval excludes zero}
 \label{tab:spearman}
-\begin{tabular}{lc@{\qquad}lc}
+\begin{tabular}{lcc}
 \toprule
-Descriptor & $\rho$ & Descriptor & $\rho$ \\
+Descriptor & $\rho$ & 95\% CI \\
 \midrule
-PV (cm$^3$/g) & 0.43 & TPSA & $-0.19$ \\
-Dose (g/L) & 0.33 & $S$ & $-0.19$ \\
-$E$ & $-0.30$ & $C_i$ (mg/L) & 0.18 \\
-APD (nm) & 0.28 & $d_{003}$ (nm) & 0.17 \\
-pH & 0.27 & $B$ & $-0.16$ \\
-Hydrothermal time (h) & 0.23 & Calcination time (h) & 0.16 \\
+PV (cm$^3$/g) & 0.43 & [0.37, 0.47] \\
+Dose (g/L) & 0.33 & [0.28, 0.38] \\
+$E$ & $-0.30$ & [$-0.35$, $-0.25$] \\
+APD (nm) & 0.28 & [0.22, 0.34] \\
+pH & 0.27 & [0.21, 0.32] \\
+Hydrothermal time (h) & 0.23 & [0.18, 0.29] \\
+TPSA & $-0.19$ & [$-0.25$, $-0.14$] \\
+$S$ & $-0.19$ & [$-0.24$, $-0.13$] \\
+$C_i$ (mg/L) & 0.18 & [0.13, 0.23] \\
+$d_{003}$ (nm) & 0.17 & [0.11, 0.22] \\
+$B$ & $-0.16$ & [$-0.22$, $-0.10$] \\
+Calcination time (h) & 0.16 & [0.06, 0.27] \\
 \bottomrule
 \end{tabular}
-\end{table} Spearman correlations among the numeric
+\end{table}
+
+Spearman correlations among the numeric
 descriptors (Fig.~S1) show the expected blocks: the Abraham solvation
 parameters correlate strongly with molecular weight and with each other,
 and the composition-averaged elemental descriptors correlate with the
 metal identities they are derived from. Variance inflation factors make
-the redundancy explicit — 22 of 26 numeric descriptors exceed the usual
-threshold of 10, with a median VIF near $7 \times 10^{4}$ (Table~S6) —
+the redundancy explicit: 22 of 26 numeric descriptors exceed the usual
+threshold of 10, with a median VIF near $7 \times 10^{4}$ (Table~S6),
 because descriptors are constant within a study, so the study-cluster
 structure induces near-perfect collinearity. This redundancy motivates
 the feature-selection experiment of Section~\ref{sec:fs} and, more
@@ -100,8 +119,16 @@ modeling of the operating conditions within known systems. The
 in-sample $R^2$ of the ensembles approaches 0.99, and the gap to the
 test score is the expected overfitting margin of high-capacity learners
 rather than a protocol artifact; the cross-validation and test scores
-agree closely. Figure~\ref{fig:parity} shows the parity and residual
-plots of the best model on the reference split. It is worth noting that
+agree closely. The two leading ensembles are statistically
+indistinguishable: a paired Wilcoxon test on MAE across the 20 splits
+does not separate HistGB from XGBoost ($p = 0.23$), so we treat them as
+co-leaders. Adjusting $R^2$ for the 30 predictors changes little
+($0.83 \pm 0.03$ for HistGB versus the unadjusted $0.85$).
+Figure~\ref{fig:parity} adds the bias diagnostics on the reference
+split: the fitted test regression is $\hat{y} = 0.87\,y + 5.6$, the mild
+slope shrinkage typical of regularized learners (extreme removals are
+pulled toward the mean), while the training fit is essentially unbiased
+(slope 0.98). It is worth noting that
 these scores are already 2--3 RMSE points more conservative than a
 protocol without duplicate removal on the same data, since deduplication
 alone eliminates records whose test values could be looked up verbatim
@@ -110,8 +137,7 @@ from training.
 \begin{table}[t]
 \centering
 \caption{Model and baseline performance under within-system
-interpolation (T1), mean $\pm$ SD over 20 seeded 80/20 splits
-[VALUES FROM repeated\_interp\_summary.csv]}
+interpolation (T1), mean $\pm$ SD over 20 seeded 80/20 splits}
 \label{tab:interp}
 \begin{tabular}{lccc}
 \toprule
@@ -174,6 +200,11 @@ Error also grows with the held-out study's own scope: per-study MAE
 correlates with both the number of records and the within-study spread
 of RR\% ($r \approx 0.45$ for each), meaning studies that explore wide
 condition ranges are precisely the ones an outside model cannot resolve.
+A pollutant-by-model matrix of the same audit (Table~S11) shows in
+addition that no model wins uniformly: XGBoost leads for ciprofloxacin,
+Cubist for doxycycline and tetracycline, and KNN, pure similarity
+lookup, for amoxicillin, underlining how class-dependent cross-study
+prediction currently is.
 The learning curve in Fig.~\ref{fig:lc}b is flat between 5 and 40
 training studies, suggesting that cross-study error is limited by the
 diversity of compiled systems rather than by record count. This
@@ -184,8 +215,9 @@ when the test set contains genuinely new systems.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{fig_parity}
-\caption{Parity and residual plots of the best model under interpolation}
+\includegraphics[width=\linewidth]{fig_parity_diag}
+\caption{Parity and residual diagnostics of the best model under
+interpolation, with fitted slope and intercept}
 \label{fig:parity}
 \end{figure}
 
@@ -220,12 +252,12 @@ Interpolation accuracy is indistinguishable across the sets ($R^2$ of
 $0.85 \pm 0.03$ for HistGB in all three; XGBoost and Cubist behave the
 same, Table~S8), so ten well-chosen descriptors carry essentially all
 the within-system signal of the full thirty. This is because the
-removable descriptors are redundant with the retained ones — the
+removable descriptors are redundant with the retained ones (the
 collinear Abraham and composition-averaged block flagged by the VIF
-analysis — rather than independently informative. In the other
+analysis) rather than independently informative. In the other
 direction, no reduction rescues cross-study transfer: the LOSO median
 moves only from 16.4 to 16.2 points, consistent with the flat learning
-curve — the transfer bottleneck is study diversity, not dimensionality.
+curve: the transfer bottleneck is study diversity, not dimensionality.
 The practical reading favors parsimony: the top-10 set consists of the
 five operating conditions, four texture properties, and log
 $K_{\mathrm{ow}}$, all routinely reported quantities, so a deployable
@@ -275,6 +307,37 @@ deployment task.
 \includegraphics[width=\linewidth]{fig_conformal_ad}
 \caption{Conformal coverage and applicability-domain flag}
 \label{fig:conformal}
+\end{figure}
+
+\subsection{Error tolerance and screening use}
+\label{sec:errorbands}
+
+Figure~\ref{fig:errorbands} translates the error metrics into the terms
+a user experiences: the share of test predictions falling within fixed
+tolerance bands. Under interpolation, 84\% of HistGB predictions land
+within 10 RR\% points of the measured value and 95\% within 20 points,
+so a practitioner optimizing conditions for a studied system can expect
+single-digit errors most of the time. Under leave-one-study-out
+prediction the distribution inverts: only about a quarter of predictions
+fall within 10 points and more than half miss by over 20, for Cubist and
+HistGB alike.
+
+The screening recast makes the consequence concrete. Binarizing at
+RR\% $\ge$ 80 ("effective removal") and asking whether the model's
+shortlist is right, interpolation predictions achieve a precision of
+0.92 at a recall of 0.58; the shortlist is trustworthy though
+incomplete. For unseen studies the same construction collapses to a
+precision of 0.32 and a recall of 0.06 (Table~S10): of 203 genuinely
+effective records, the cross-study model retrieves twelve. A model
+whose regression does not transfer does not become useful by lowering
+the question to a binary shortlist; this closes the argument of
+Sections~\ref{sec:rq2}--\ref{sec:rq3} from the decision side.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=.8\linewidth]{fig_error_bands}
+\caption{Distribution of absolute prediction errors by tolerance band}
+\label{fig:errorbands}
 \end{figure}
 
 \subsection{Feature effects and mechanistic reading (RQ4)}
@@ -379,6 +442,43 @@ no meaningful computational premium over the random-split protocol it
 replaces. Hyperparameter search with Optuna dominates the overall
 budget and is performed once, not per evaluation task.
 
+\subsection{Comparison with previous studies}
+\label{sec:prior}
+
+Table~\ref{tab:prior} places this work among prior ML compilations for
+adsorption prediction. To the best of our knowledge, none of the prior
+compilations reports a study-grouped evaluation, so their published
+scores are comparable to our record-level column rather than to the
+screening column. Our record-level numbers ($R^2$ of $0.85 \pm 0.03$)
+sit inside the range those studies report, which supports rather than
+contradicts them; the point of the comparison is that all such scores,
+ours included, measure interpolation within compiled systems, and the
+grouped column shows how much smaller the transferable part is.
+Re-evaluating published models under grouped protocols would clarify how
+general this pattern is across adsorbent families.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Machine learning compilations for adsorption prediction
+[ALL CITATION ROWS REQUIRE VERIFICATION BY THE AUTHORS BEFORE
+SUBMISSION]}
+\label{tab:prior}
+\begin{tabular}{lllll}
+\toprule
+Study & Adsorbent / target & Data & Best model & Reported skill \\
+\midrule
+{[TODO-verify]} & biochar/AC, nutrient $Q_m$ & $\sim$1{,}029 records & Cubist &
+  [TODO: reported $R^2$, random split] \\
+{[TODO-verify]} & [TODO: ML adsorption example 1] & [TODO] & [TODO] & [TODO] \\
+{[TODO-verify]} & [TODO: ML adsorption example 2] & [TODO] & [TODO] & [TODO] \\
+\midrule
+This work & LDH, micropollutant RR\% & 1{,}342 records / 59 studies & XGB/HistGB &
+  $R^2$ $0.85 \pm 0.03$ (record split); $\approx 0$ (unseen studies) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Environmental implications and outlook}
 \label{sec:implications}
 
@@ -391,12 +491,38 @@ new LDH formulations or new pollutants face a harder trade: the models
 do carry transferable signal, reducing naive baseline errors by roughly
 40 percent, but per-study skill remains near zero, so predictions for
 unmeasured systems support coarse prioritization at best and should be
-treated as hypotheses for experiment rather than estimates. Reported $R^2$ values
-above 0.9 in prior compilations \citep{TODO-ml-adsorption-1,
-TODO-biochar-cubist} are consistent with our record-level numbers and,
-by the mechanism quantified here, likely overstate screening ability in
-the same way; re-evaluation of published models under grouped protocols
-would clarify how general this pattern is.
+treated as hypotheses for experiment rather than estimates.
+
+\textbf{Recommendations by stakeholder.} For treatment operators:
+literature-trained models are ready for condition optimization of
+measured systems, and the conformal intervals of
+Section~\ref{sec:rq3} supply defensible error bars for that use. For
+modelers: report study-grouped scores alongside record-level ones:
+the two-task protocol here adds minutes of computation
+(Section~\ref{sec:timing}) and prevents the largest overstatement this
+field currently makes. For experimentalists and data curators: report
+interlayer anion identity, surface morphology, and standardized
+pH$_{\mathrm{pzc}}$/BET protocols, since these unreported properties are
+the most plausible carriers of the transferable signal that current
+descriptors lack; and prioritize new \emph{systems} over additional
+condition points on studied ones, because the learning curve shows
+cross-study error is limited by study diversity, not record count. The
+same logic governs model maintenance: retraining on an extended
+compilation is worthwhile when new studies arrive, and the released
+pipeline re-runs the full audit on an updated spreadsheet without code
+changes.
+
+\textbf{Choice of target variable.} RR\% is a condition-bound outcome
+rather than an intrinsic material property, which makes it honest for
+operations but couples every prediction to dose, time, and
+concentration. Capacity-style targets such as $Q_e$ or the
+Langmuir-derived $Q_m$ look more transferable in principle, but they
+inherit the fitting error of the isotherm model that produced them, and
+in our original-dataset experiments $Q_e$ prediction showed the same
+gap in amplified form: Cubist reached a test $R^2$ of 0.98 under
+interpolation yet a leave-one-study-out median MAE of 42 mg/g, with
+positive per-study $R^2$ in only 3 of 32 evaluable studies. The evaluation protocol, not
+the target choice, determines whether reported skill is real.
 
 We see three concerns that temper the conclusions. First, the
 compilation covers 59 studies, so the cross-study estimates themselves
