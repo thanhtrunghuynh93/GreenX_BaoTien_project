@@ -1,0 +1,16 @@
+task,band,pct
+interpolation (HistGB),0-2,45.6
+interpolation (HistGB),2-5,19.8
+interpolation (HistGB),5-10,18.3
+interpolation (HistGB),10-20,11.5
+interpolation (HistGB),20-inf,4.8
+LOSO (Cubist),0-2,4.9
+LOSO (Cubist),2-5,6.7
+LOSO (Cubist),5-10,12.9
+LOSO (Cubist),10-20,23.5
+LOSO (Cubist),20-inf,52.0
+LOSO (HistGB),0-2,4.7
+LOSO (HistGB),2-5,5.6
+LOSO (HistGB),5-10,11.4
+LOSO (HistGB),10-20,21.7
+LOSO (HistGB),20-inf,56.6

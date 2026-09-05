@@ -1,0 +1,4 @@
+task,threshold,precision,recall,f1,positives_true,n
+interpolation (HistGB),80.0,0.917,0.579,0.71,38,252
+LOSO (Cubist),80.0,0.316,0.059,0.1,203,1342
+LOSO (HistGB),80.0,0.167,0.01,0.019,203,1342

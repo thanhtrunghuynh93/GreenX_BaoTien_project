@@ -1,0 +1,4 @@
+contrast,median_diff,ci_lo,ci_hi,excludes_zero,n_a,n_b
+Zn-Al vs Mg-Al,8.72,-0.66,17.17,False,128,561
+calcined vs uncalcined,10.11,1.73,17.85,True,457,885
+diclofenac vs tetracycline,15.45,8.28,27.29,True,304,208
