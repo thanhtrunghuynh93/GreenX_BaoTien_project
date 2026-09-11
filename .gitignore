@@ -18,3 +18,4 @@ paper/Template_paper/
 *.out
 *.spl
 *.synctex.gz
+venv/ 

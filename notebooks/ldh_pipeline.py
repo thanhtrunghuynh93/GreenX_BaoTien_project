@@ -45,6 +45,8 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
+from BorutaShap import BorutaShap
+
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 SEED = 42
@@ -194,6 +196,30 @@ def make_cv(train_groups=None, n_splits=5, seed=SEED):
         return GroupKFold(n_splits=n_splits)
     return KFold(n_splits=n_splits, shuffle=True, random_state=seed)
 
+# ---------------------------------------------------------------------------
+# BorutaShap
+# ---------------------------------------------------------------------------
+def run_borutashap(X_train_scaled: pd.DataFrame, y_train: pd.Series, n_trials: int = 20) -> list[str]:
+    """
+    Runs BorutaShap feature selection and returns a list of features to drop,
+    while strictly protecting Abraham variables.
+    """
+    abraham_vars = {'A', 'B', 'V', 'S', 'E'}
+    
+    print("[BorutaShap] Starting feature selection...")
+    selector = BorutaShap(importance_measure='shap', classification=False)
+    selector.fit(X=X_train_scaled, y=y_train, n_trials=n_trials, sample=False, verbose=False)
+    
+    features_to_remove = set(selector.features_to_remove)
+    final_drop_list = list(features_to_remove - abraham_vars)
+    
+    protected_count = len(features_to_remove.intersection(abraham_vars))
+    print(f"[BorutaShap] Suggested dropping {len(features_to_remove)} features.")
+    if protected_count > 0:
+        print(f"[BorutaShap] OVERRIDE: Saved {protected_count} Abraham variable(s) from being dropped.")
+    print(f"[BorutaShap] Final number of features dropping: {len(final_drop_list)}")
+    
+    return final_drop_list
 
 # ---------------------------------------------------------------------------
 # Models & tuning
@@ -768,7 +794,32 @@ def run_experiment(cfg: ExperimentConfig, df: pd.DataFrame | None = None) -> dic
     print(f"[{cfg.name}] split={cfg.split_mode}  train={len(X_tr)}  test={len(X_te)}  "
           f"features={X.shape[1]}")
 
-    numeric, categorical = split_feature_types(X)
+    # =========================================================================
+    # NEW FEATURE SELECTION BLOCK (WITH EXPLICIT SCALER)
+    # =========================================================================
+    
+    # 1. Temporarily preprocess training data to impute NaNs and encode categoricals
+    num_temp, cat_temp = split_feature_types(X_tr)
+    prep_temp = make_preprocessor(num_temp, cat_temp)
+    X_tr_imputed = prep_temp.fit_transform(X_tr)
+    
+    # 2. Explicitly scale the data since ScaledKNNImputer inverse-transforms
+    scaler = StandardScaler().set_output(transform="pandas")
+    X_tr_scaled = scaler.fit_transform(X_tr_imputed)
+    
+    # 3. Get features to drop via BorutaShap using the scaled data
+    drop_suggestion = run_borutashap(X_tr_scaled, y_tr, n_trials=20)
+
+    features_to_drop = [col for col in drop_suggestion if col in X.columns]
+    
+    # 4. Drop the useless features from the original (unimputed) train and test sets
+    X_tr = X_tr.drop(columns=features_to_drop, errors="ignore")
+    X_te = X_te.drop(columns=features_to_drop, errors="ignore")
+    
+    print(f"[{cfg.name}] Features remaining after BorutaShap: {X_tr.shape[1]}")
+    # =========================================================================
+
+    numeric, categorical = split_feature_types(X_tr)
     prep = make_preprocessor(numeric, categorical)
     cv = make_cv(tr_groups, seed=cfg.seed)
     # Reporting CV uses different fold boundaries than tuning CV (M3).
