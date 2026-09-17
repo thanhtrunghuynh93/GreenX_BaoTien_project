@@ -13,6 +13,7 @@
     "Cubist",
     "RF",
     "XGB",
-    "HistGB"
+    "HistGB",
+    "LGB"
   ]
 }
