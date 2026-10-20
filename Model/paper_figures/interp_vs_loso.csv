@@ -1,5 +1,6 @@
 ,interpolation MAE (hold-out),unseen-study MAE (LOSO median)
 HistGB,5.17,15.53
+LGB,5.29,14.71
 XGB,5.61,19.14
 KNN,7.39,14.0
 RF,8.29,16.51
