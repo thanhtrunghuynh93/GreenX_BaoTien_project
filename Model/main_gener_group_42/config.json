@@ -1,9 +1,9 @@
 {
-  "name": "interp_row_42",
+  "name": "main_gener_group_42",
   "data_file": "20260804_Data_Adsorption.xlsx",
   "target": "RR %",
   "drop_features": [],
-  "split_mode": "row",
+  "split_mode": "group",
   "dedup_features": true,
   "engineered_features": false,
   "test_size": 0.2,

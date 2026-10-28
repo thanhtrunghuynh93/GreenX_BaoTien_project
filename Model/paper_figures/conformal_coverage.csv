@@ -1,3 +1,13 @@
 task,nominal,coverage,half_width_q
-interpolation,0.9,0.937,19.353
-unseen studies,0.9,0.992,67.698
+interpolation,0.5,0.615,4.194
+interpolation,0.6,0.69,5.897
+interpolation,0.7,0.75,8.07
+interpolation,0.8,0.845,12.595
+interpolation,0.9,0.929,17.902
+interpolation,0.95,0.972,30.942
+unseen studies,0.5,0.72,27.805
+unseen studies,0.6,0.85,37.364
+unseen studies,0.7,0.932,46.163
+unseen studies,0.8,0.949,51.273
+unseen studies,0.9,0.971,59.716
+unseen studies,0.95,0.978,67.36

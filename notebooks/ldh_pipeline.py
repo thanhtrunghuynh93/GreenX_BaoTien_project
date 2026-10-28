@@ -426,12 +426,9 @@ def evaluate_model(model, X_tr, y_tr, X_te, y_te, cv, model_name, groups=None):
     res = {
         "model": best_model, "label": model_name,
         "y_te": np.asarray(y_te), "y_pred": y_pred,
-        "train_r2": r2_score(y_tr, y_pred_tr),
-        "train_mae": mean_absolute_error(y_tr, y_pred_tr),
+        "train_r2": r2_score(y_tr, y_pred_tr), "train_mae": mean_absolute_error(y_tr, y_pred_tr), "train_rmse": root_mean_squared_error(y_tr, y_pred_tr),
         "cv_r2": cv_scores["r2"], "cv_mae": cv_scores["mae"], "cv_rmse": cv_scores["rmse"],
-        "test_r2": r2_score(y_te, y_pred),
-        "test_mae": mean_absolute_error(y_te, y_pred),
-        "test_rmse": root_mean_squared_error(y_te, y_pred),
+        "test_r2": r2_score(y_te, y_pred), "test_mae": mean_absolute_error(y_te, y_pred), "test_rmse": root_mean_squared_error(y_te, y_pred),
     }
     print(f"    Train      R2 {res['train_r2']:7.4f} | MAE {res['train_mae']:8.4f}")
     print(f"    CV (valid) R2 {res['cv_r2']:7.4f} | MAE {res['cv_mae']:8.4f}")
@@ -442,10 +439,10 @@ def evaluate_model(model, X_tr, y_tr, X_te, y_te, cv, model_name, groups=None):
 def results_table(results: dict) -> pd.DataFrame:
     rows = {
         name: {k: r[k] for k in
-               ("train_r2", "cv_r2", "test_r2", "train_mae", "cv_mae", "test_mae", "test_rmse")}
+               ("train_r2", "cv_r2", "test_r2", "train_mae", "cv_mae", "test_mae", "train_rmse", "cv_rmse", "test_rmse")}
         for name, r in results.items()
     }
-    return pd.DataFrame(rows).T.sort_values("test_mae")
+    return pd.DataFrame(rows).T.sort_values("cv_r2")
 
 
 # ---------------------------------------------------------------------------
@@ -590,6 +587,34 @@ def repeated_interpolation(models: dict, X, y, n_repeats=20, test_size=0.2,
     return pd.DataFrame(rows)
 
 
+def repeated_generalization(models: dict, X, y, groups, n_repeats=20,
+                                  test_size=0.2, seed=SEED) -> pd.DataFrame:
+    """Evaluate fixed-hyperparameter models over repeated study-level splits.
+
+    Each repeat holds out whole studies. Returns one row per (model, repeat);
+    summarize the returned metrics across repeats for mean and standard
+    deviation.
+    """
+    groups = np.asarray(groups)
+    if len(groups) != len(X):
+        raise ValueError("groups must have the same number of rows as X")
+
+    rows = []
+    for rep in range(n_repeats):
+        X_tr, X_te, y_tr, y_te, _ = make_split(
+            X, y, groups=groups, test_size=test_size, seed=seed + rep
+        )
+        for name, model in models.items():
+            m = clone(model)
+            m.fit(X_tr, y_tr)
+            pred = m.predict(X_te)
+            rows.append({"model": name, "repeat": rep,
+                         "r2": r2_score(y_te, pred),
+                         "mae": mean_absolute_error(y_te, pred),
+                         "rmse": root_mean_squared_error(y_te, pred)})
+    return pd.DataFrame(rows)
+
+
 def _group_mean_predict(tr_keys, y_tr, te_keys) -> np.ndarray:
     means = pd.Series(np.asarray(y_tr, dtype=float)).groupby(
         np.asarray(tr_keys)).mean()
@@ -599,9 +624,10 @@ def _group_mean_predict(tr_keys, y_tr, te_keys) -> np.ndarray:
 
 def baseline_repeated_interpolation(y, keys: dict, n_repeats=20, test_size=0.2,
                                     seed=SEED) -> pd.DataFrame:
-    """Naive baselines under task (T1): 'global mean' plus one group-mean
-    predictor per entry in `keys` (name -> label series aligned with y),
-    e.g. per-pollutant or per-study means learned on the training rows."""
+    """Naive baselines under T1:
+        Global Mean: Guesses same number (average of train set) for every single test row.
+        Group Mean: Guesses the average based on a specific category passed in the keys dictionary.
+    """
     y = pd.Series(np.asarray(y, dtype=float)).reset_index(drop=True)
     keys = {k: pd.Series(np.asarray(v)).reset_index(drop=True) for k, v in keys.items()}
     rows = []

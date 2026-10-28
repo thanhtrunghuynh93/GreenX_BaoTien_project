@@ -1,4 +1,4 @@
 task,threshold,precision,recall,f1,positives_true,n
-interpolation (HistGB),80.0,0.852,0.605,0.708,38,252
-LOSO (Cubist),80.0,0.1,0.005,0.009,203,1342
-LOSO (HistGB),80.0,0.433,0.064,0.112,203,1342
+interpolation (HistGB),80.0,0.875,0.553,0.677,38,252
+LOSO (Cubist),80.0,0.1,0.01,0.018,203,1342
+LOSO (HistGB),80.0,0.5,0.005,0.01,203,1342

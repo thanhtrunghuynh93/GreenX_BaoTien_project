@@ -1,10 +1,11 @@
 {
-  "name": "orig_rr_interp_42",
-  "data_file": "Data_Adsorption.xlsx",
+  "name": "main_interp_row_42",
+  "data_file": "20260804_Data_Adsorption.xlsx",
   "target": "RR %",
   "drop_features": [],
   "split_mode": "row",
   "dedup_features": true,
+  "engineered_features": false,
   "test_size": 0.2,
   "seed": 42,
   "n_trials": 30,
@@ -15,6 +16,7 @@
     "Cubist",
     "RF",
     "XGB",
+    "LGB",
     "HistGB"
   ]
 }
