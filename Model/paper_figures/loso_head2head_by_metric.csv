@@ -1,0 +1,4 @@
+metric,best_model,wins,studies,valid_comparisons
+R2,RF,16,33,33
+MAE,HistGB,15,33,33
+RMSE,HistGB,15,33,33

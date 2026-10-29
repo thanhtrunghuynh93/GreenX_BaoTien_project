@@ -662,9 +662,14 @@ def baseline_loso(y, groups, keys: dict) -> pd.DataFrame:
         for name, k in keys.items():
             preds[name] = _group_mean_predict(k[~te], y_tr, k[te])
         for name, pred in preds.items():
-            rows.append({"study": study, "model": name, "n_rows": int(te.sum()),
-                         "mae": mean_absolute_error(y_te, pred),
-                         "rmse": root_mean_squared_error(y_te, pred)})
+            rows.append({
+                    "study": study,
+                    "model": name,
+                    "n_rows": int(te.sum()),
+                    "r2": r2_score(y_te, pred) if len(y_te) >= 3 and np.var(y_te) > 0 else np.nan,
+                    "mae": mean_absolute_error(y_te, pred),
+                    "rmse": root_mean_squared_error(y_te, pred),
+                })
     return pd.DataFrame(rows)
 
 
