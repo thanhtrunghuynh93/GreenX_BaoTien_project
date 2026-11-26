@@ -284,6 +284,19 @@ def _suggest(trial: optuna.Trial, space: dict) -> dict:
     return params
 
 
+def _tree_extra(model_name: str) -> dict:
+    """Extra constructor args for the tuned tree ensembles.
+
+    n_jobs=1 on purpose: the CV folds are already run in parallel by
+    cross_validate(n_jobs=-1), so letting each model also open one thread per
+    CPU core oversubscribes the machine (LightGBM ~50x slower, XGBoost ~4x).
+    """
+    extra = {"n_jobs": 1} if model_name in ("XGB", "RF", "LGB") else {}
+    if model_name == "LGB":
+        extra["verbose"] = -1
+    return extra
+
+
 def tune_optuna(model_name, preprocessor, X, y, cv, groups=None, n_trials=30, seed=SEED):
     """Single dict-driven tuner for all tree ensembles.
 
@@ -293,11 +306,9 @@ def tune_optuna(model_name, preprocessor, X, y, cv, groups=None, n_trials=30, se
     estimator_cls, space = OPTUNA_SPACES[model_name]
 
     def objective(trial):
-        extra = {"n_jobs": -1} if model_name in ("XGB", "RF", "LGB") else {}
-        if model_name == "LGB":
-            extra["verbose"] = -1
         model = make_model_pipeline(
-            preprocessor, estimator_cls(**_suggest(trial, space), random_state=seed, **extra)
+            preprocessor,
+            estimator_cls(**_suggest(trial, space), random_state=seed, **_tree_extra(model_name)),
         )
         scores = _cross_validate_scores(model, X, y, cv, groups)
         return scores["mae"]
@@ -305,11 +316,9 @@ def tune_optuna(model_name, preprocessor, X, y, cv, groups=None, n_trials=30, se
     sampler = optuna.samplers.TPESampler(seed=seed)
     study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
-    extra = {"n_jobs": -1} if model_name in ("XGB", "RF", "LGB") else {}
-    if model_name == "LGB":
-        extra["verbose"] = -1
     return make_model_pipeline(
-        preprocessor, estimator_cls(**study.best_params, random_state=seed, **extra)
+        preprocessor,
+        estimator_cls(**study.best_params, random_state=seed, **_tree_extra(model_name)),
     ), study.best_params
 
 
