@@ -56,8 +56,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "Data"
 MODEL_DIR = REPO_ROOT / "Model"
 
-TARGET_CANDIDATES = ["RR %", "Qe mg/g", "Qt", "Ce mg/L"]
-
 METHOD_MAP = {
     "urea hydrolysis": "Urea Hydrolysis",
     "co-precipitation or aging": "Co-precipitation",
@@ -73,45 +71,44 @@ METHOD_MAP = {
 # ---------------------------------------------------------------------------
 
 def load_data(file_path: str | Path) -> pd.DataFrame:
-    """Load and clean the adsorption dataset. Keeps the `Id` (source study)
+    """Load and clean the adsorption dataset. Keeps the `study_id` (source study)
     column — it is needed for group-aware splitting."""
     df = pd.read_excel(file_path, sheet_name=0, header=1)
     df.columns = df.columns.str.strip()
+    # Find categorical columns
+    cat_cols = df.select_dtypes(include=['object', 'category', 'string']).columns
+    for col in cat_cols:
+        df[col] = df[col].astype(str).str.strip()
+        df[col] = df[col].str.lower()
 
-    for col in ("TP", "Metal(II)", "Metal(III)"):
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
-    if "Metal(II)" in df.columns:
-        df["Metal(II)"] = df["Metal(II)"].str.title()
-
-    if "Method" in df.columns:
-        # Normalize whitespace/punctuation first, then map known synonyms.
+    # Normalize whitespace/punctuation first, then map known synonyms.
+    if "synthesis_method" in df.columns:
         method = (
-            df["Method"].astype(str).str.lower()
+            df["synthesis_method"].astype(str).str.lower()
             .str.replace(r"\s+", " ", regex=True)
             .str.replace(r"\s*-\s*", "-", regex=True)
             .str.strip(" .")
         )
-        df["Method"] = method.replace(METHOD_MAP).str.title()
+        df["synthesis_method"] = method.replace(METHOD_MAP).str.title()
 
-    df["RR %"] = normalize_rr_percent(df["RR %"])
+    df["removal_pct"] = normalize_removal_pct(df["removal_pct"])
     return df
 
 
-def normalize_rr_percent(rr: pd.Series) -> pd.Series:
-    """Bring RR to percent units [0, 100] regardless of stored format.
+def normalize_removal_pct(removal_pct: pd.Series) -> pd.Series:
+    """Bring removal efficiency (%) to percent units [0, 100] regardless of stored format.
 
     The raw sheets store RR as a fraction (0-1); older notebook revisions
     divided by 100 unconditionally, squashing the target to [0, 0.01].
     This version is range-aware and idempotent under re-runs.
     """
-    rr = rr.astype(float)
-    if rr.max() <= 1.5:  # stored as fraction
-        rr = rr * 100
-    assert rr.min() >= 0 and rr.max() <= 100 + 1e-9, (
-        f"RR % out of range after normalization: [{rr.min()}, {rr.max()}]"
+    removal_pct = removal_pct.astype(float)
+    if removal_pct.max() <= 1.5:  # stored as fraction
+        removal_pct = removal_pct * 100
+    assert removal_pct.min() >= 0 and removal_pct.max() <= 100 + 1e-9, (
+        f"RR % out of range after normalization: [{removal_pct.min()}, {removal_pct.max()}]"
     )
-    return rr
+    return removal_pct
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +201,7 @@ def run_borutashap(X_train_scaled: pd.DataFrame, y_train: pd.Series, n_trials: i
     Runs BorutaShap feature selection and returns a list of features to drop,
     while strictly protecting Abraham variables.
     """
-    abraham_vars = {'A', 'B', 'V', 'S', 'E'}
+    abraham_vars = {'abraham_a', 'abraham_b', 'abraham_v', 'abraham_s', 'abraham_e'}
     
     print("[BorutaShap] Starting feature selection...")
     selector = BorutaShap(importance_measure='shap', classification=False)
@@ -442,7 +439,7 @@ def results_table(results: dict) -> pd.DataFrame:
                ("train_r2", "cv_r2", "test_r2", "train_mae", "cv_mae", "test_mae", "train_rmse", "cv_rmse", "test_rmse")}
         for name, r in results.items()
     }
-    return pd.DataFrame(rows).T.sort_values("cv_r2")
+    return pd.DataFrame(rows).T.sort_values(by=["cv_r2"], ascending=False)
 
 
 # ---------------------------------------------------------------------------
@@ -489,7 +486,7 @@ def vif_table(X: pd.DataFrame) -> pd.DataFrame:
     """VIF over FEATURES ONLY (targets must not be in X)."""
     from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-    bad = [c for c in X.columns if c in TARGET_CANDIDATES]
+    bad = ["removal_pct"]
     assert not bad, f"targets {bad} must be excluded from VIF"
     Xn = X.select_dtypes(include=[np.number]).dropna()
     Xn = Xn.assign(_const=1.0)
@@ -508,12 +505,12 @@ def add_engineered_features(X: pd.DataFrame) -> pd.DataFrame:
     loading per adsorbent mass; the Log Kow interaction couples hydrophobicity
     with surface charge."""
     X = X.copy()
-    if {"pH", "pHpzc"} <= set(X.columns):
-        X["pH-pHpzc"] = X["pH"] - X["pHpzc"]
-    if {"Ci mg/L", "AD g/L"} <= set(X.columns):
-        X["Ci/AD"] = X["Ci mg/L"] / X["AD g/L"].replace(0, np.nan)
-    if {"Log Kow", "pH", "pHpzc"} <= set(X.columns):
-        X["LogKow*(pH-pHpzc)"] = X["Log Kow"] * (X["pH"] - X["pHpzc"])
+    if {"ph", "ph_pzc"} <= set(X.columns):
+        X["dph"] = X["ph"] - X["ph_pzc"]
+    if {"c0", "adsorbent_dose"} <= set(X.columns):
+        X["c0_per_dose"] = X["c0"] / X["adsorbent_dose"].replace(0, np.nan)
+    if {"log_kow", "ph", "ph_pzc"} <= set(X.columns):
+        X["logkow_x_dph"] = X["log_kow"] * (X["ph"] - X["ph_pzc"])
     return X
 
 
@@ -778,8 +775,8 @@ def plot_model_comparison(table: pd.DataFrame, target_label: str, out_path=None)
 @dataclass
 class ExperimentConfig:
     name: str
-    data_file: str = "20260804_Data_Adsorption.xlsx"
-    target: str = "RR %"
+    data_file: str = "20261028_Data_Adsorption.xlsx"
+    target: str = "removal_pct"
     drop_features: list[str] = field(default_factory=list)
     split_mode: str = "group"  # "row" = within-system interpolation; "group" = unseen studies
     dedup_features: bool = False  # drop exact feature-duplicate rows before splitting
@@ -799,9 +796,8 @@ def run_experiment(cfg: ExperimentConfig, df: pd.DataFrame | None = None) -> dic
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df[df[cfg.target].notna()].reset_index(drop=True)
-    groups_all = df["Id"] if (cfg.split_mode == "group" and "Id" in df.columns) else None
-    targets_present = [c for c in TARGET_CANDIDATES if c in df.columns]
-    X = df.drop(columns=["Id", *targets_present], errors="ignore")
+    groups_all = df["study_id"] if (cfg.split_mode == "group" and "study_id" in df.columns) else None
+    X = df.drop(columns=["study_id", "removal_pct"], errors="ignore")
     X = X.drop(columns=[c for c in cfg.drop_features if c in X.columns])
     if cfg.engineered_features:
         X = add_engineered_features(X)
