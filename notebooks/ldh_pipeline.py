@@ -56,6 +56,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "Data"
 MODEL_DIR = REPO_ROOT / "Model"
 
+TARGET_CANDIDATES = ["removal_pct"]
+
 METHOD_MAP = {
     "urea hydrolysis": "Urea Hydrolysis",
     "co-precipitation or aging": "Co-precipitation",
@@ -486,7 +488,7 @@ def vif_table(X: pd.DataFrame) -> pd.DataFrame:
     """VIF over FEATURES ONLY (targets must not be in X)."""
     from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-    bad = ["removal_pct"]
+    bad = [c for c in X.columns if c in TARGET_CANDIDATES]
     assert not bad, f"targets {bad} must be excluded from VIF"
     Xn = X.select_dtypes(include=[np.number]).dropna()
     Xn = Xn.assign(_const=1.0)
